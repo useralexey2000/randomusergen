@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  app:
+    container_name: usergen
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      SERVER_HOST: "0.0.0.0"
+      SERVER_PORT: "8080"
+      POSTGRES_HOST: userdb
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    depends_on:
+      userdb:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  userdb:
+    image: postgres:alpine3.16
+    container_name: user_db
+    environment:
+      POSTGRES_HOST: "0.0.0.0"
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./schema:/docker-entrypoint-initdb.d
+      # - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    # networks:
+    #   - usernet
+    ports:
+      - "5432:5432"
+      
+# volumes:
+#   dbdata:
